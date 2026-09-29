@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# PS5 Vulkan - build RADV from my Mesa fork at its pinned revision.
+# PS5 Vulkan - build RADV from the Mesa fork at its pinned revision.
 # Copyright (C) 2026 Mihawk-99
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# The RADV port lives in my Mesa fork, ../PS5_Mesa (branch main: the Mesa
-# 26.2.0 release with a PS5 winsys, -Dradv-winsys=ps5). The pinned revision is
+# The RADV port lives in the Mesa fork, ../PS5_Mesa (branch main of
+# mpereiraesaa/PS5_Mesa, a fork of mihawk-99/PS5_Mesa: the Mesa 26.2.0
+# release with a PS5 winsys, -Dradv-winsys=ps5). The pinned revision is
 # exported with git archive, so a build never depends on the fork's working
 # tree, and built with meson for the console (tooling/radv/ps5-cross.ini):
 #
@@ -26,7 +27,7 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 mesa_fork="${PS5_MESA_FORK:-$root/../PS5_Mesa}"
-mesa_revision=cedb774b27d089fa81f46add28d0a8c13ff0f7d2
+mesa_revision=b46222eda92abe1b3f1ed3a11cca83c0036fc82b
 variant=${1:-debug}
 sdk="$root/.deps/native/ps5-payload-sdk"
 source_tree="$root/.deps/work/radv-src"
