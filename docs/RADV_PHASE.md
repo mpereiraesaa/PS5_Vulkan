@@ -963,3 +963,18 @@ d877b87's code linked as a title `libvulkan.prx`:
 | 3840x2160 D3D11 control, and a 1080p to 4K resize in one swapchain | pass |
 | x64 Vulkan probe, x86 placed-map probe | pass |
 
+### CPU frames while no swapchain presents (2026-09-29)
+
+A game on Wine can draw outside Direct3D between its Vulkan frames:
+Warcraft III's DirectShow cinematics are GDI drawing. Once the swapchain
+owned VideoOut, the title that shows GDI frames had no display left for
+them, and the cinematics were black with sound. The WSI now takes a frame
+the CPU drew in VideoOut's tiling, `wsi_videoout_show_tiled()`, and flips
+it from a B8G8R8A8 set of its own while no swapchain has a flip queued or
+has flipped within 150 ms; `wsi_videoout_idle()` says whether one would
+show (mpereiraesaa/PS5_Mesa #3, 8177db7, pinned by `tools/build-radv.sh`).
+Measured on the console: VideoOut scales a set smaller than the mode only
+in the swapchains' B8G8R8A8 format; a set in the R8G8B8A8 format the
+title's own presenter uses showed unscaled at the top left. A 1440x1080
+set is refused outright ("Buffer Resolution Error", 0x80290005), so a 4:3
+game has to present at a 16:9 size.

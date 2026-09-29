@@ -18,8 +18,9 @@ RADV_PHASE.md, 2026-09-29). Next: the targeted rerun of those 61 cases, then
 the not-supported features, before any further full run. The Mesa fork's work is all on its `main` branch.
 vkQuake and PS5 RetroArch (v0.5.0-alpha.5) ship on RADV's release archive
 (cedb774), with the on-disk shader cache in its exclusive mode (the pin has
-since moved to mpereiraesaa/PS5_Mesa b46222e, whose VideoOut swapchain also
-takes sizes below 3840x2160: RADV_PHASE.md, 2026-09-29); ps5vk is
+since moved to mpereiraesaa/PS5_Mesa 8177db7, whose VideoOut swapchain also
+takes sizes below 3840x2160 and which shows a title's CPU frames while no
+swapchain presents: RADV_PHASE.md, 2026-09-29); ps5vk is
 their `PS5_VULKAN_DRIVER=ps5vk` build option. Open: concurrency between
 queues (backlog), and Dolphin's first start of a game with an empty shader
 cache (83% and 92% for its first two 10 s windows, ps5vk 86% and 99%).
