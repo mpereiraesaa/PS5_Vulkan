@@ -3790,3 +3790,28 @@ height (tiling 0, B8G8R8A8 SDR) and sized in whole 128x128-pixel 64 KiB tiles
   presented three more; all correct on the TV.
 - Other sizes, and more than two sets in one process, were not measured.
 
+
+## 2026-10-05 — VideoOut refuses 1280x720 and 1440x960 framebuffers at the 3840x2160 output (RADV)
+
+Measured through Prospero Win (GTA IV through DXVK 2.6.2) on PS5_Mesa
+8177db7, FW 12.02, the 3840x2160 59.94 Hz output, with a 1920x1080 set for
+CPU frames (set 0) and one for the 1920x1080 swapchain (set 1) registered
+first:
+
+- The game's 1440x960 and 1280x720 display modes made DXVK create
+  swapchains of those sizes. `sceVideoOutRegisterBuffers2` refused each as
+  set 2 with `0x80290005`, the title's VideoOut printing
+  `[VideoOut] Buffer Resolution Error: 1440x960` (and `1280x720`). With the
+  1440x1080 set refused on 2026-09-29, the sizes measured taken are
+  1920x1080 and 3840x2160 (and 2560x1440 on a base PS5 at FW 13.40,
+  mihawk-99/PS5_Vulkan 2026-10-04); the sizes measured refused are
+  1280x720, 1440x960 and 1440x1080. A fourth set is refused with
+  `0x80290001` (mihawk-99/PS5_Vulkan 2026-10-04), not a resolution error.
+- The WSI kept each refused set's direct memory, and DXVK tried again every
+  frame: about 500 refusals of 20 MiB (five 4 MiB buffers for 1280x720) took
+  the title's direct memory, after which RADV's allocations failed with
+  VK_ERROR_OUT_OF_DEVICE_MEMORY (206 times), and DXVK's first buffer after
+  the game reset to 1920x1080 failed (`DxvkMemoryAllocator: Memory
+  allocation failed`, 16,793,600 bytes) and d3d9.dll read the null
+  allocation (`guest exception 0xc0000005 at d3d9.dll+0x423fd`, address
+  0x24: DxvkBuffer::assignStorage's `m_storage->getBufferInfo()`).
