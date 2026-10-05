@@ -978,3 +978,33 @@ in the swapchains' B8G8R8A8 format; a set in the R8G8B8A8 format the
 title's own presenter uses showed unscaled at the top left. A 1440x1080
 set is refused outright ("Buffer Resolution Error", 0x80290005), so a 4:3
 game has to present at a 16:9 size.
+
+## 2026-10-05 — swapchains of any size, blitted into a size VideoOut takes (PS5 Mesa 9d3cd41)
+
+VideoOut refused 1280x720 and 1440x960 framebuffers (HARDWARE_FINDINGS.md,
+2026-10-05), so a Direct3D game through Prospero Win could not switch to
+those display modes, and the WSI kept each refused set's memory until the
+title ran out of direct memory. PS5_Mesa 9d3cd41:
+
+- registers framebuffers of the measured sizes only, 1920x1080 and
+  3840x2160. A swapchain of either is its framebuffers, with no copy, as
+  before;
+- gives a swapchain of any other size up to the mode's images of its own.
+  Each present blits the image on the presenting queue into a framebuffer of
+  the smallest of those sizes that holds it, scaled with its aspect ratio
+  kept, centred, with black bars (1440x960 shows at 1620x1080 from x 150 of
+  1920x1080; 1280x720 fills it). The flip waits for the same fence, so FIFO
+  pacing is unchanged;
+- releases a refused set's memory and does not ask for that size again;
+- registers at most three sets, the limit measured upstream;
+- tells libvulkan.prx's hardware cursor where the image shows
+  (`wsi_videoout_present_rect`).
+
+Host model: `tools/test-videoout-wsi.sh` builds RADV's host model, whose
+VideoOut now refuses the sizes the console refused, and checks the size
+choice and placement (tests/videoout/test_videoout_scale.c) and swapchains
+of 1920x1080, 1280x720, 1440x960, 1920x1080, 800x600, 2560x1440, 3840x2160
+and 1920x1080, made after destroying the last and again through
+oldSwapchain, 8 frames each (tests/videoout/test_videoout_swapchain.c):
+only the 1920x1080 and 3840x2160 sets are registered and every present
+flips. The console run is still to come.
