@@ -16,6 +16,10 @@
 #       Khronos loader; then checks from the backend's log that only the
 #       sizes VideoOut takes were registered, nothing was refused, and every
 #       present flipped.
+#   tests/videoout/test_videoout_takeover.c   which swapchain has the one
+#       display: a swapchain that never presented (wined3d's hidden caps
+#       window under Zink) gives it to the next window's; one that presented
+#       keeps it.
 #
 # Needs the Vulkan loader (libvulkan-dev), meson, ninja, and the host clc tools
 # tools/build-radv.sh builds. Run the build under a memory cap on a shared
@@ -84,6 +88,8 @@ cc=${CC:-cc}
     "$root/tests/videoout/test_videoout_scale.c" -o "$work/test_videoout_scale"
 "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror "$root/tests/videoout/test_videoout_swapchain.c" -lvulkan \
     -o "$work/test_videoout_swapchain"
+"$cc" -std=c11 -O1 -g -Wall -Wextra -Werror "$root/tests/videoout/test_videoout_takeover.c" -lvulkan \
+    -o "$work/test_videoout_takeover"
 
 echo "==> [videoout-wsi] test_videoout_scale"
 "$work/test_videoout_scale"
@@ -124,3 +130,18 @@ if ((failures)); then
     exit 1
 fi
 echo "test_videoout_swapchain: pass ($revision)"
+
+echo "==> [videoout-wsi] test_videoout_takeover"
+log="$work/takeover.log"
+VK_DRIVER_FILES="$work/radv_host_icd.json" VK_ICD_FILENAMES="$work/radv_host_icd.json" \
+    MESA_VK_VIDEOOUT_HOST_LOG=1 timeout 300 "$work/test_videoout_takeover" 2> "$log" ||
+    { tail -20 "$log" >&2; echo "test_videoout_takeover failed; see $log" >&2; exit 1; }
+expect "takeovers" 1 "$(grep -c 'a swapchain that never presented gives the display to a new one' "$log" || true)"
+# The game's 4 frames, 4 more after the refusals, 4 after its oldSwapchain
+# replacement, and 4 from the later window.
+expect "takeover flips" 16 "$(grep -c 'videoout-host: flip' "$log" || true)"
+if ((failures)); then
+    echo "test_videoout_takeover: $failures check(s) failed; see $log" >&2
+    exit 1
+fi
+echo "test_videoout_takeover: pass ($revision)"
