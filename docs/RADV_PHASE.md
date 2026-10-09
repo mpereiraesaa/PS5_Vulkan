@@ -1008,3 +1008,29 @@ and 1920x1080, made after destroying the last and again through
 oldSwapchain, 8 frames each (tests/videoout/test_videoout_swapchain.c):
 only the 1920x1080 and 3840x2160 sets are registered and every present
 flips. The console run is still to come.
+
+## 2026-10-09 — a swapchain that never presented gives the display to the next (PS5 Mesa f2ee389)
+
+VideoOut has one display, and the WSI refused a swapchain made while
+another had it (`VK_ERROR_NATIVE_WINDOW_IN_USE_KHR`) unless it replaced that
+one through oldSwapchain. Counter-Strike 1.6 under Zink through Prospero Win
+showed no menu: hl.exe's wined3d reads OpenGL's caps from a context on a
+hidden 10x10 window (a 111x1 client area), Zink made a swapchain on that
+window's display-plane surface, never presented with it, and the game's own
+window, made next, was refused. PS5_Mesa f2ee389:
+
+- records in each swapchain that it queued a present;
+- lets a new swapchain take the display from one that never presented, which
+  is retired as an oldSwapchain is: its acquires and presents are out of
+  date, and the buffers it holds stay its own until it is destroyed;
+- keeps the display with a swapchain that presented, as before, until it is
+  destroyed or replaced through oldSwapchain.
+
+Host model: tests/videoout/test_videoout_takeover.c makes a 111x1 swapchain
+that acquires an image and never presents, then a 1920x1080 one on a second
+surface. At 9d3cd41 the second is refused (-1000000001); at f2ee389 it
+presents, the probe's acquire is out of date, a third surface's swapchain
+and the probe made again are refused while the game presents, the game
+replaces its own through oldSwapchain, and after it is destroyed a later
+window presents. `tools/test-videoout-wsi.sh` runs it after the two earlier
+tests, which still pass. The console run is still to come.
