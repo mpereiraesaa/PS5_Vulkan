@@ -24,7 +24,7 @@ zlib_stamp="$zlib_root/.source-version"
 # there). The pinned revision is exported with git archive, so a build never
 # depends on the fork's working tree, and the SDK directory records it.
 sdk_fork="${PS5_PAYLOAD_SDK_FORK:-$root/../PS5_PayloadSDK}"
-sdk_revision=95c08f27386fc698f6bbe21dde3030140a41d10b
+sdk_revision=b83202be73e930050e00de0f1b4d9ec46c0391bf
 zlib_url="https://zlib.net/fossils/zlib-$zlib_version.tar.gz"
 zlib_hash="bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 skip_sdk=false
